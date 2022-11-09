@@ -7,7 +7,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (req.method === 'POST') {
         const session = await getSession({req})
-        
+        //erro era no .env.local -> NEXTAUTH_SECRET
         //const { data: session } = useSession()
         //const user = await req.body.user;
 
