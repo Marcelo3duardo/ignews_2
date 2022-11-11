@@ -12,21 +12,24 @@ export async function saveSubscription(
     //salvar os dados da subscription no faunadb
 
     //console.log(subscriptionId,customerId);
+        console.log(subscriptionId,customerId);
 
     const userRef = await fauna.query(
         q.Select(
             "ref",
             q.Get(
                 q.Match(
-                    q.Index("user_by_stripe_costumer_id"),
+                    q.Index('user_by_stripe_customer_id'),
                     customerId
                 )
             )
         )
-    )
+    ) 
 
     //selecionei os dados do stripe
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    console.log("subscription")
+    console.log(subscription)
 
     const subscriptionData = {
         id: subscription.id,
@@ -34,11 +37,12 @@ export async function saveSubscription(
         status: subscription.status,
         price_id: subscription.items.data[0].price.id,
     }
-
+    console.log("subscriptionData")
+    console.log(subscriptionData)
     //salvando no fauna os importantes
     await fauna.query(
         q.Create(
-            q.Collections('subscriptions'),
+            q.Collection ('subscriptions'),
             { data: subscriptionData }
         ),
 
