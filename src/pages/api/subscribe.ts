@@ -1,12 +1,19 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+import { query as q } from 'faunadb'
 import { stripe } from "../../Services/stripe";
 import { getSession, useSession } from 'next-auth/react'
+import { fauna } from "../../Services/fauna";
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
 
+    type User = {
+        ref: {
+            id: string;
+        }
+    }
+
     if (req.method === 'POST') {
-        const session = await getSession({req})
+        const session = await getSession({ req })
         //erro era no .env.local -> NEXTAUTH_SECRET
         //const { data: session } = useSession()
         //const user = await req.body.user;
@@ -16,6 +23,27 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             //metadata
         })
 
+
+        //atualizando user
+        const user = await fauna.query<User>(
+            q.Get(
+                q.Match(
+                    q.Index('user_by_email'),
+                    q.Casefold(session.user.email)
+                )
+            )
+        )
+
+        await fauna.query(
+            q.Update(
+                q.Ref(
+                    q.Collection('users'),
+                    user.ref.id),
+                {
+                    data: { stripe_customer_id: stripeCustomer.id }
+                },
+            )
+        )
 
         //session.user
 
