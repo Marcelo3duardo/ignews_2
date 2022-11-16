@@ -10,6 +10,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         ref: {
             id: string;
         }
+        data: {
+            stripe_customer_id: string;
+        }
     }
 
     if (req.method === 'POST') {
@@ -18,10 +21,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         //const { data: session } = useSession()
         //const user = await req.body.user;
 
-        const stripeCustomer = await stripe.customers.create({
-            email: session.user.email,
-            //metadata
-        })
+
+
 
 
         //atualizando user
@@ -34,21 +35,36 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             )
         )
 
-        await fauna.query(
-            q.Update(
-                q.Ref(
-                    q.Collection('users'),
-                    user.ref.id),
-                {
-                    data: { stripe_customer_id: stripeCustomer.id }
-                },
+
+        let customerId = user.data.stripe_customer_id
+
+        if (!customerId) {
+            const stripeCustomer = await stripe.customers.create({
+                email: session.user.email,
+                //metadata
+            })
+
+
+            await fauna.query(
+                q.Update(
+                    q.Ref(
+                        q.Collection('users'),
+                        user.ref.id),
+                    {
+                        data: { stripe_customer_id: stripeCustomer.id }
+                    },
+                )
             )
-        )
+
+            customerId = stripeCustomer.id
+        }
+
+
 
         //session.user
 
         const stripeCheckoutSession = await stripe.checkout.sessions.create({
-            customer: stripeCustomer.id,
+            customer: customerId,
             payment_method_types: ['card'],
             billing_address_collection: 'required',
             line_items: [
